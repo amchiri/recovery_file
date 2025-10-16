@@ -1,0 +1,317 @@
+{
+  "signatures": [
+    {
+      "extension": "jpg",
+      "mimeType": "image/jpeg",
+      "description": "JPEG Image",
+      "header": "FF D8 FF",
+      "footer": "FF D9"
+    },
+    {
+      "extension": "png",
+      "mimeType": "image/png",
+      "description": "PNG Image",
+      "header": "89 50 4E 47 0D 0A 1A 0A"
+    },
+    {
+      "extension": "gif",
+      "mimeType": "image/gif",
+      "description": "GIF Image",
+      "header": "47 49 46 38"
+    },
+    {
+      "extension": "bmp",
+      "mimeType": "image/bmp",
+      "description": "Bitmap Image",
+      "header": "42 4D"
+    },
+    {
+      "extension": "webp",
+      "mimeType": "image/webp",
+      "description": "WebP Image",
+      "header": "52 49 46 46",
+      "footer": "57 45 42 50"
+    },
+    {
+      "extension": "tiff",
+      "mimeType": "image/tiff",
+      "description": "TIFF Image",
+      "header": "49 49 2A 00"
+    },
+    {
+      "extension": "cr2",
+      "mimeType": "image/x-canon-cr2",
+      "description": "Canon RAW Image",
+      "header": "49 49 2A 00 10 00 00 00 43 52"
+    },
+    {
+      "extension": "nef",
+      "mimeType": "image/x-nikon-nef",
+      "description": "Nikon RAW Image",
+      "header": "49 49 2A 00"
+    },
+    {
+      "extension": "heic",
+      "mimeType": "image/heic",
+      "description": "HEIC Image (iPhone)",
+      "header": "00 00 00 18 66 74 79 70 68 65 69 63"
+    },
+    {
+      "extension": "ico",
+      "mimeType": "image/x-icon",
+      "description": "Icon File",
+      "header": "00 00 01 00"
+    },
+    {
+      "extension": "psd",
+      "mimeType": "image/vnd.adobe.photoshop",
+      "description": "Adobe Photoshop",
+      "header": "38 42 50 53"
+    },
+    {
+      "extension": "mp4",
+      "mimeType": "video/mp4",
+      "description": "MP4 Video",
+      "header": "00 00 00",
+      "headerOffset": 4,
+      "headerPattern": "66 74 79 70"
+    },
+    {
+      "extension": "avi",
+      "mimeType": "video/x-msvideo",
+      "description": "AVI Video",
+      "header": "52 49 46 46"
+    },
+    {
+      "extension": "mkv",
+      "mimeType": "video/x-matroska",
+      "description": "Matroska Video",
+      "header": "1A 45 DF A3"
+    },
+    {
+      "extension": "mov",
+      "mimeType": "video/quicktime",
+      "description": "QuickTime Video",
+      "header": "00 00 00",
+      "headerOffset": 4,
+      "headerPattern": "66 74 79 70 71 74"
+    },
+    {
+      "extension": "flv",
+      "mimeType": "video/x-flv",
+      "description": "Flash Video",
+      "header": "46 4C 56"
+    },
+    {
+      "extension": "wmv",
+      "mimeType": "video/x-ms-wmv",
+      "description": "Windows Media Video",
+      "header": "30 26 B2 75 8E 66 CF 11"
+    },
+    {
+      "extension": "mp3",
+      "mimeType": "audio/mpeg",
+      "description": "MP3 Audio",
+      "header": "FF FB"
+    },
+    {
+      "extension": "wav",
+      "mimeType": "audio/wav",
+      "description": "WAV Audio",
+      "header": "52 49 46 46"
+    },
+    {
+      "extension": "flac",
+      "mimeType": "audio/flac",
+      "description": "FLAC Audio",
+      "header": "66 4C 61 43"
+    },
+    {
+      "extension": "m4a",
+      "mimeType": "audio/mp4",
+      "description": "M4A Audio",
+      "header": "00 00 00",
+      "headerOffset": 4,
+      "headerPattern": "66 74 79 70 4D 34 41"
+    },
+    {
+      "extension": "ogg",
+      "mimeType": "audio/ogg",
+      "description": "OGG Audio",
+      "header": "4F 67 67 53"
+    },
+    {
+      "extension": "aac",
+      "mimeType": "audio/aac",
+      "description": "AAC Audio",
+      "header": "FF F1"
+    },
+    {
+      "extension": "pdf",
+      "mimeType": "application/pdf",
+      "description": "PDF Document",
+      "header": "25 50 44 46",
+      "footer": "25 25 45 4F 46"
+    },
+    {
+      "extension": "doc",
+      "mimeType": "application/msword",
+      "description": "Microsoft Word Document",
+      "header": "D0 CF 11 E0 A1 B1 1A E1"
+    },
+    {
+      "extension": "docx",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "description": "Microsoft Word Document (XML)",
+      "header": "50 4B 03 04"
+    },
+    {
+      "extension": "xls",
+      "mimeType": "application/vnd.ms-excel",
+      "description": "Microsoft Excel Spreadsheet",
+      "header": "D0 CF 11 E0 A1 B1 1A E1"
+    },
+    {
+      "extension": "xlsx",
+      "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "description": "Microsoft Excel Spreadsheet (XML)",
+      "header": "50 4B 03 04"
+    },
+    {
+      "extension": "ppt",
+      "mimeType": "application/vnd.ms-powerpoint",
+      "description": "Microsoft PowerPoint",
+      "header": "D0 CF 11 E0 A1 B1 1A E1"
+    },
+    {
+      "extension": "pptx",
+      "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "description": "Microsoft PowerPoint (XML)",
+      "header": "50 4B 03 04"
+    },
+    {
+      "extension": "rtf",
+      "mimeType": "application/rtf",
+      "description": "Rich Text Format",
+      "header": "7B 5C 72 74 66"
+    },
+    {
+      "extension": "epub",
+      "mimeType": "application/epub+zip",
+      "description": "EPUB eBook",
+      "header": "50 4B 03 04"
+    },
+    {
+      "extension": "zip",
+      "mimeType": "application/zip",
+      "description": "ZIP Archive",
+      "header": "50 4B 03 04"
+    },
+    {
+      "extension": "rar",
+      "mimeType": "application/x-rar-compressed",
+      "description": "RAR Archive",
+      "header": "52 61 72 21 1A 07"
+    },
+    {
+      "extension": "7z",
+      "mimeType": "application/x-7z-compressed",
+      "description": "7-Zip Archive",
+      "header": "37 7A BC AF 27 1C"
+    },
+    {
+      "extension": "tar",
+      "mimeType": "application/x-tar",
+      "description": "TAR Archive",
+      "header": "75 73 74 61 72",
+      "headerOffset": 257
+    },
+    {
+      "extension": "gz",
+      "mimeType": "application/gzip",
+      "description": "GZIP Archive",
+      "header": "1F 8B"
+    },
+    {
+      "extension": "bz2",
+      "mimeType": "application/x-bzip2",
+      "description": "BZIP2 Archive",
+      "header": "42 5A 68"
+    },
+    {
+      "extension": "iso",
+      "mimeType": "application/x-iso9660-image",
+      "description": "ISO Disk Image",
+      "header": "43 44 30 30 31",
+      "headerOffset": 32769
+    },
+    {
+      "extension": "exe",
+      "mimeType": "application/x-msdownload",
+      "description": "Windows Executable",
+      "header": "4D 5A"
+    },
+    {
+      "extension": "dll",
+      "mimeType": "application/x-msdownload",
+      "description": "Windows DLL",
+      "header": "4D 5A"
+    },
+    {
+      "extension": "elf",
+      "mimeType": "application/x-elf",
+      "description": "Linux Executable",
+      "header": "7F 45 4C 46"
+    },
+    {
+      "extension": "apk",
+      "mimeType": "application/vnd.android.package-archive",
+      "description": "Android Package",
+      "header": "50 4B 03 04"
+    },
+    {
+      "extension": "sqlite",
+      "mimeType": "application/x-sqlite3",
+      "description": "SQLite Database",
+      "header": "53 51 4C 69 74 65 20 66 6F 72 6D 61 74 20 33 00"
+    },
+    {
+      "extension": "db",
+      "mimeType": "application/x-sqlite3",
+      "description": "Database File",
+      "header": "53 51 4C 69 74 65 20 66 6F 72 6D 61 74 20 33 00"
+    },
+    {
+      "extension": "pst",
+      "mimeType": "application/vnd.ms-outlook",
+      "description": "Outlook Data File",
+      "header": "21 42 44 4E"
+    },
+    {
+      "extension": "ost",
+      "mimeType": "application/vnd.ms-outlook",
+      "description": "Outlook Offline Data",
+      "header": "21 42 44 4E"
+    },
+    {
+      "extension": "sav",
+      "mimeType": "application/x-unreal-savegame",
+      "description": "Unreal Engine Game Save (GVAS) - Octopath Traveler 2, etc.",
+      "header": "47 56 41 53",
+      "notes": "Used by Octopath Traveler 2 and many other Unreal Engine games. Structure: GVAS (4 bytes) + version (4 bytes) + compressed save data"
+    },
+    {
+      "extension": "save",
+      "mimeType": "application/x-unreal-savegame",
+      "description": "Unreal Engine Game Save Alternative Extension",
+      "header": "47 56 41 53"
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "total_signatures": 58,
+    "description": "File signature database for FileRecovery tool",
+    "last_updated": "2025-10-14",
+    "notes": "Includes GVAS signature for Unreal Engine game saves (requested for Octopath Traveler 2)"
+  }
+}

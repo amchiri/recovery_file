@@ -1,0 +1,47 @@
+# Build directory
+build/
+cmake-build-*/
+
+# Executables
+*.exe
+*.out
+*.app
+file_recovery
+
+# Object files
+*.o
+*.obj
+*.a
+*.lib
+
+# IDE files
+.vscode/
+.vs/
+.idea/
+*.user
+*.suo
+*.sln
+*.vcxproj*
+
+# Logs
+*.log
+recovery.log
+recovery_log.txt
+
+# Recovered files (pour tests)
+recovered/
+output/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# User-specific config
+config.ini
+imgui.ini
+
+# OS files
+.DS_Store
+Thumbs.db

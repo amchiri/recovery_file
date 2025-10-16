@@ -1,0 +1,137 @@
+╔════════════════════════════════════════════════════════════╗
+║                                                            ║
+║        🚀 FILE RECOVERY TOOL - GUIDE RAPIDE 🚀            ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+
+⚠️  ATTENTION : Droits administrateur requis pour scanner C:
+
+┌────────────────────────────────────────────────────────────┐
+│  COMMENT LANCER L'APPLICATION                              │
+└────────────────────────────────────────────────────────────┘
+
+✅ MÉTHODE 1 : Script automatique (RECOMMANDÉ)
+   
+   Double-cliquez sur : launch_gui_admin.bat
+   
+   → Le script demande automatiquement les droits admin
+   → Cliquez "Oui" dans la fenêtre UAC
+   → L'interface se lance
+
+
+✅ MÉTHODE 2 : Manuellement
+   
+   1. Allez dans : build\Release\
+   2. Clic droit sur : file_recovery_gui.exe
+   3. Choisir : "Exécuter en tant qu'administrateur"
+   4. Cliquer "Oui" dans UAC
+
+
+✅ MÉTHODE 3 : Scanner un disque USB (SANS admin)
+   
+   1. Lancez normalement : .\build\Release\file_recovery_gui.exe
+   2. Sélectionnez un disque USB/externe (E:, F:, etc.)
+   3. Le scan fonctionne SANS droits admin
+
+
+┌────────────────────────────────────────────────────────────┐
+│  POURQUOI LES DROITS ADMIN ?                               │
+└────────────────────────────────────────────────────────────┘
+
+Windows protège l'accès direct aux disques système (C:)
+→ Sécurité : évite les malwares
+→ Normal : TOUS les outils de récupération ont besoin d'admin
+→ Sûr : le code est open-source, vérifiable
+
+
+┌────────────────────────────────────────────────────────────┐
+│  UTILISATION DE L'INTERFACE                                │
+└────────────────────────────────────────────────────────────┘
+
+1. 📀 Sélectionner le disque source (dropdown)
+   → C: (nécessite admin)
+   → E:, F: (disques USB, pas d'admin requis)
+
+2. 📁 Choisir le dossier de sortie
+   → Par défaut : C:\Users\...\recovered_saves
+
+3. ☑️  Cocher les extensions à récupérer
+   → .sav pour sauvegardes de jeux
+   → .jpg, .png pour images
+   → .pdf, .doc pour documents
+   → etc. (30+ formats disponibles)
+
+4. ⚙️  Ajuster les options
+   → Deep Scan : ☑ (recommandé, plus exhaustif)
+   → Threads : 4 (ajuster selon votre CPU)
+
+5. 🚀 Cliquer "START RECOVERY"
+   → Observer la progression en temps réel
+   → Les fichiers apparaissent dans le tableau
+
+6. ⏹️  Cliquer "STOP" pour arrêter si besoin
+
+7. 📊 Voir les résultats
+   → Tableau avec qualité color-codée
+   → Cliquer sur un fichier pour voir les détails
+   → "Open in Explorer" pour ouvrir le dossier
+
+
+┌────────────────────────────────────────────────────────────┐
+│  QUALITÉ DES FICHIERS                                      │
+└────────────────────────────────────────────────────────────┘
+
+🟢 EXCELLENT  : < 30% zeros → Fichier parfait
+🟡 GOOD       : 30-60% zeros → Récupérable
+🟠 POOR       : 60-90% zeros → Partiellement corrompu
+🔴 CORRUPTED  : 90-99% zeros → Très endommagé
+⚫ DEAD       : > 99% zeros → Inutilisable
+
+
+┌────────────────────────────────────────────────────────────┐
+│  DÉPANNAGE                                                 │
+└────────────────────────────────────────────────────────────┘
+
+❌ "Failed to open device: Win32 Error: 5"
+   → Relancez en tant qu'administrateur
+   → Ou scannez un disque USB
+
+❌ "No extensions selected"
+   → Cochez au moins une extension dans la liste
+
+❌ L'interface freeze
+   → Le scan est en cours, soyez patient
+   → Deep scan peut prendre du temps
+
+❌ Aucun fichier trouvé
+   → Les fichiers ont peut-être été écrasés
+   → Essayez un autre disque
+   → Vérifiez que l'extension est correcte
+
+
+┌────────────────────────────────────────────────────────────┐
+│  FICHIERS UTILES                                           │
+└────────────────────────────────────────────────────────────┘
+
+📄 README.md              → Documentation générale
+📄 ADMIN_REQUIRED.md      → Explications droits admin
+📄 GUI_README.md          → Guide complet interface
+📄 GAME_SAVES_RECOVERY.md → Spécial sauvegardes jeux
+📄 ROADMAP.md             → Plan de développement
+
+
+┌────────────────────────────────────────────────────────────┐
+│  SUPPORT                                                   │
+└────────────────────────────────────────────────────────────┘
+
+🐛 Bug ? Problème ? Question ?
+   → Vérifiez ADMIN_REQUIRED.md
+   → Consultez les logs console
+   → Contactez le développeur
+
+
+═══════════════════════════════════════════════════════════════
+
+🎮 Bon courage pour récupérer vos fichiers ! 🎮
+
+═══════════════════════════════════════════════════════════════
