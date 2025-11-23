@@ -588,10 +588,16 @@ void RecoveryGUI::renderResultsPanel() {
         if (ImGui::Button("🔎 Find Duplicates")) {
             if (!duplicatesAnalyzed_) {
                 // Analyze files for duplicates
-                duplicateDetector_->clearFiles();
+                duplicateDetector_->clear();
                 for (const auto& file : recoveredFiles_) {
                     if (std::filesystem::exists(file.path)) {
-                        duplicateDetector_->addFile(file.path);
+                        FileRecovery::Utils::FileHash fileHash;
+                        fileHash.filePath = file.path;
+                        fileHash.sha256 = duplicateDetector_->hashFile(file.path);
+                        fileHash.fileSize = std::filesystem::file_size(file.path);
+                        fileHash.fileType = file.type;
+                        fileHash.quality = 0.0f; // Will be computed
+                        duplicateDetector_->addFile(fileHash);
                     }
                 }
                 duplicateGroups_ = duplicateDetector_->findDuplicates();
@@ -1115,9 +1121,9 @@ void RecoveryGUI::startRecovery() {
                 }
             });
             LOG_DEBUG("File found callback set");
-            
+
             // Configure scan for each extension
-            LOG_DEBUG("Starting scan loop for " << selectedExts.size() << " extensions...");
+            LOG_DEBUG("Starting scan loop for " + std::to_string(selectedExts.size()) + " extensions...");
             for (const auto& ext : selectedExts) {
                 if (stopRequested_) {
                     std::cout << "\n⏹️ Scan stopped by user" << std::endl;
@@ -1140,8 +1146,8 @@ void RecoveryGUI::startRecovery() {
                     diskInfo.totalSize = totalBytes.QuadPart;
                     diskInfo.freeSize = totalFreeBytes.QuadPart;
                     diskInfo.usedSize = diskInfo.totalSize - diskInfo.freeSize;
-                    
-                    LOG_DEBUG("Disk size: " << (diskInfo.totalSize / (1024*1024*1024)) << " GB");
+
+                    LOG_DEBUG("Disk size: " + std::to_string(diskInfo.totalSize / (1024*1024*1024)) + " GB");
                     
                     // Detect filesystem type
                     char fileSystemName[256];
@@ -1512,8 +1518,9 @@ void RecoveryGUI::renderDuplicatePanel() {
                 if (ImGui::CollapsingHeader(("Group " + std::to_string(g + 1) + " - " + std::to_string(group.files.size()) + " duplicates (SHA256: " + group.hash.substr(0, 16) + "...)").c_str())) {
                     ImGui::Indent();
 
-                    for (const auto& file : group.files) {
-                        bool isBest = (file.filePath == group.bestFile);
+                    for (size_t i = 0; i < group.files.size(); i++) {
+                        const auto& file = group.files[i];
+                        bool isBest = (static_cast<int>(i) == group.bestQualityIndex);
 
                         if (isBest) {
                             ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "✓ KEEP");

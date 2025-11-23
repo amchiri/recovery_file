@@ -305,8 +305,6 @@ std::string FileQuality::generateRecommendation(const FileQualityReport& report)
     }
 }
 
-} // namespace FileRecovery
-
 // ============================================================================
 // NOUVELLES FONCTIONS INTELLIGENTES
 // ============================================================================

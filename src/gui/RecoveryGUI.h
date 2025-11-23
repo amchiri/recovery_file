@@ -27,6 +27,7 @@ struct RecoveredFileInfo {
     size_t size;
     FileQualityLevel quality;
     std::string path;
+    std::string type;
     float zeroPercentage;
 };
 

@@ -90,14 +90,6 @@ if(WIN32)
     target_link_libraries(file_recovery PRIVATE setupapi)
 endif()
 
-# Batch Quality Analyzer tool
-add_executable(batch_analyzer 
-    batch_quality_analyzer.cpp
-    src/utils/FileQuality.cpp
-    src/utils/Logger.cpp
-)
-target_link_libraries(batch_analyzer PRIVATE Threads::Threads)
-
 # GUI Application
 option(BUILD_GUI "Build GUI application" ON)
 if(BUILD_GUI)
@@ -152,7 +144,7 @@ if(BUILD_GUI)
 endif()
 
 # Installation
-install(TARGETS file_recovery batch_analyzer DESTINATION bin)
+install(TARGETS file_recovery DESTINATION bin)
 
 # Tests (optionnel)
 option(BUILD_TESTS "Build tests" OFF)

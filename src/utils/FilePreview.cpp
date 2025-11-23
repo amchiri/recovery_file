@@ -113,7 +113,7 @@ PreviewData FilePreview::generateImageThumbnail(const ByteArray& data, const std
 
     if (!imgData) {
         // Decoding failed, create error preview
-        LOG_WARNING("Failed to decode " + ext + " image: " + std::string(stbi_failure_reason()));
+        Logger::getInstance().log(LogLevel::WARNING, "Failed to decode " + ext + " image: " + std::string(stbi_failure_reason()));
         preview.error = "Failed to decode image: " + std::string(stbi_failure_reason());
 
         // Create placeholder thumbnail
@@ -135,7 +135,7 @@ PreviewData FilePreview::generateImageThumbnail(const ByteArray& data, const std
         return preview;
     }
 
-    LOG_INFO("Successfully decoded " + ext + " image: " + std::to_string(width) +
+    Logger::getInstance().log(LogLevel::INFO, "Successfully decoded " + ext + " image: " + std::to_string(width) +
              "x" + std::to_string(height) + " (" + std::to_string(channels) + " channels)");
 
     // Store original dimensions
@@ -151,14 +151,14 @@ PreviewData FilePreview::generateImageThumbnail(const ByteArray& data, const std
     preview.thumbnailData.resize(thumbWidth * thumbHeight * 4);
 
     // Resize using stb_image_resize with high-quality algorithm
-    int result = stbir_resize_uint8_linear(
+    bool result = stbir_resize_uint8_linear(
         imgData, width, height, 0,
         preview.thumbnailData.data(), thumbWidth, thumbHeight, 0,
         STBIR_RGBA
-    );
+    ) != 0;
 
     if (!result) {
-        LOG_WARNING("Failed to resize thumbnail, using simple copy");
+        Logger::getInstance().log(LogLevel::WARNING, "Failed to resize thumbnail, using simple copy");
         // Fallback: just copy top-left corner
         int copyW = std::min(width, thumbWidth);
         int copyH = std::min(height, thumbHeight);
@@ -263,7 +263,7 @@ bool FilePreview::decodeJPEG(const ByteArray& data, std::vector<uint8_t>& rgba, 
     );
 
     if (!imgData) {
-        LOG_ERROR("Failed to decode JPEG: " + std::string(stbi_failure_reason()));
+        Logger::getInstance().log(LogLevel::ERROR, "Failed to decode JPEG: " + std::string(stbi_failure_reason()));
         return false;
     }
 
@@ -275,7 +275,7 @@ bool FilePreview::decodeJPEG(const ByteArray& data, std::vector<uint8_t>& rgba, 
     // Free stb_image buffer
     stbi_image_free(imgData);
 
-    LOG_DEBUG("JPEG decoded successfully: " + std::to_string(width) + "x" + std::to_string(height));
+    Logger::getInstance().log(LogLevel::DEBUG, "JPEG decoded successfully: " + std::to_string(width) + "x" + std::to_string(height));
     return true;
 }
 
@@ -291,7 +291,7 @@ bool FilePreview::decodePNG(const ByteArray& data, std::vector<uint8_t>& rgba, i
     );
 
     if (!imgData) {
-        LOG_ERROR("Failed to decode PNG: " + std::string(stbi_failure_reason()));
+        Logger::getInstance().log(LogLevel::ERROR, "Failed to decode PNG: " + std::string(stbi_failure_reason()));
         return false;
     }
 
@@ -303,7 +303,7 @@ bool FilePreview::decodePNG(const ByteArray& data, std::vector<uint8_t>& rgba, i
     // Free stb_image buffer
     stbi_image_free(imgData);
 
-    LOG_DEBUG("PNG decoded successfully: " + std::to_string(width) + "x" + std::to_string(height));
+    Logger::getInstance().log(LogLevel::DEBUG, "PNG decoded successfully: " + std::to_string(width) + "x" + std::to_string(height));
     return true;
 }
 
@@ -312,14 +312,14 @@ void FilePreview::resizeThumbnail(const std::vector<uint8_t>& srcRGBA, int srcW,
     dstRGBA.resize(dstW * dstH * 4);
 
     // Use stb_image_resize for high-quality resizing
-    int result = stbir_resize_uint8_linear(
+    bool result = stbir_resize_uint8_linear(
         srcRGBA.data(), srcW, srcH, 0,
         dstRGBA.data(), dstW, dstH, 0,
         STBIR_RGBA
-    );
+    ) != 0;
 
     if (!result) {
-        LOG_WARNING("stb_image_resize failed, using fallback nearest-neighbor");
+        Logger::getInstance().log(LogLevel::WARNING, "stb_image_resize failed, using fallback nearest-neighbor");
 
         // Fallback: simple nearest-neighbor
         for (int y = 0; y < dstH; ++y) {
