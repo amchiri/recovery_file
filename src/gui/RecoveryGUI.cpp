@@ -16,6 +16,7 @@
 #include "recovery/RecoveryManager.h"
 #include "utils/Logger.h"
 #include "utils/DiskIO.h"
+#include "utils/ConfigManager.h"
 #include "../include/FileQuality.h"
 #include "Logger.h"  // Notre nouveau logger
 
@@ -30,9 +31,31 @@ static GLFWwindow* g_Window = nullptr;
 
 RecoveryGUI::RecoveryGUI() {
     std::memset(progressHistory_, 0, sizeof(progressHistory_));
+
+    // Load configuration from config.ini
+    auto& config = Utils::ConfigManager::getInstance();
+    if (!config.load("config.ini")) {
+        LOG_WARNING("Config file not found, creating default config.ini");
+        Utils::ConfigManager::createDefaultConfig("config.ini");
+        config.load("config.ini");
+    }
+
+    // Apply configuration values
+    std::string outputDir = config.getString("Paths", "output_directory", ".\\recovered_files");
+    std::string scanFolder = config.getString("Paths", "scan_folder", "");
+    threads_ = config.getInt("Performance", "thread_count", 4);
+    deepScan_ = config.getBool("Performance", "deep_scan", true);
+
+    // Copy to char arrays for ImGui
+    strncpy_s(outputPath_, sizeof(outputPath_), outputDir.c_str(), _TRUNCATE);
+    strncpy_s(scanFolderPath_, sizeof(scanFolderPath_), scanFolder.c_str(), _TRUNCATE);
+
+    LOG_INFO("Configuration loaded: threads=" + std::to_string(threads_) +
+             ", deepScan=" + std::string(deepScan_ ? "true" : "false"));
+
     detectAvailableDisks();
     initializeExtensions();
-    
+
     // Phase 9: Initialize pagination and batch operations
     pagination_ = std::make_unique<ResultsPagination>(100); // 100 items per page
     batchOps_ = std::make_unique<BatchOperations>();

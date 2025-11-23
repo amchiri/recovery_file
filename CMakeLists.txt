@@ -44,6 +44,8 @@ set(SOURCES
     src/utils/ProgressBar.cpp
     src/utils/FileQuality.cpp
     src/utils/AdminCheck.cpp
+    src/utils/ConfigManager.cpp
+    src/utils/BoyerMoore.cpp
 )
 
 # Headers
@@ -67,6 +69,8 @@ set(HEADERS
     src/utils/ProgressBar.h
     include/FileQuality.h
     include/utils/AdminCheck.h
+    include/utils/ConfigManager.h
+    include/utils/BoyerMoore.h
 )
 
 # Executable principal
@@ -114,6 +118,8 @@ if(BUILD_GUI)
         src/utils/FileQuality.cpp
         src/utils/Logger.cpp
         src/utils/AdminCheck.cpp
+        src/utils/ConfigManager.cpp
+        src/utils/BoyerMoore.cpp
     )
     
     # GUI executable

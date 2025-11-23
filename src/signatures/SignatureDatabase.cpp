@@ -1,4 +1,5 @@
 #include "SignatureDatabase.h"
+#include "utils/BoyerMoore.h"
 #include <algorithm>
 
 namespace FileRecovery {
@@ -32,20 +33,22 @@ std::optional<FileSignature> SignatureDatabase::getSignatureByExtension(const st
 std::vector<Offset> SignatureDatabase::findSignaturesInData(const ByteArray& data,
                                                            const std::string& extension) const {
     std::vector<Offset> offsets;
-    
+
     auto sigOpt = getSignatureByExtension(extension);
     if (!sigOpt) return offsets;
-    
+
     const FileSignature& sig = *sigOpt;
-    
-    // Recherche naïve - une vraie implémentation utiliserait Boyer-Moore ou similaire
-    for (size_t i = 0; i + sig.header.size() <= data.size(); ++i) {
-        bool match = std::equal(sig.header.begin(), sig.header.end(), data.begin() + i);
-        if (match) {
-            offsets.push_back(i);
-        }
+
+    // Use Boyer-Moore algorithm for optimized pattern matching
+    // Much faster than naive search for patterns >= 4 bytes
+    Utils::BoyerMoore bm(sig.header);
+    std::vector<size_t> matches = bm.searchAll(data.data(), data.size());
+
+    // Convert to Offset type
+    for (size_t pos : matches) {
+        offsets.push_back(static_cast<Offset>(pos));
     }
-    
+
     return offsets;
 }
 

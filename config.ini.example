@@ -1,0 +1,64 @@
+# File Recovery Tool Configuration
+# This file is automatically loaded at startup
+# Edit values to customize default behavior
+
+[Paths]
+# Default output directory for recovered files
+output_directory = .\recovered_files
+
+# Default scan folder (leave empty for full disk scan)
+scan_folder =
+
+# Signature database file (optional, falls back to built-in signatures)
+signature_file = signatures.txt
+
+[Performance]
+# Number of threads for scanning (0 = auto-detect)
+thread_count = 4
+
+# Enable deep scan by default
+deep_scan = true
+
+# Enable signature verification
+verify_signatures = true
+
+# Buffer size for disk I/O in MB (higher = faster but more RAM)
+buffer_size_mb = 16
+
+[Scanning]
+# Enable smart scan optimization (skip empty sectors)
+smart_scan = true
+
+# Enable large buffer optimization
+large_buffers = true
+
+# Scan specific folder instead of entire disk
+scan_specific_folder = false
+
+[FileTypes]
+# Default file types to recover (comma-separated extensions)
+# Leave empty to recover all types
+default_types = jpg,png,pdf,docx,mp4,zip
+
+[GUI]
+# Window width
+window_width = 1280
+
+# Window height
+window_height = 720
+
+# Enable dark theme
+dark_theme = true
+
+# Show file preview (not implemented yet)
+show_preview = false
+
+[Logging]
+# Log level: DEBUG, INFO, WARNING, ERROR
+log_level = INFO
+
+# Log file path
+log_file = recovery_log.txt
+
+# Enable console output
+console_output = true
