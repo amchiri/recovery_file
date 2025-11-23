@@ -10,6 +10,8 @@
 #include "FileQuality.h"
 #include "ResultsPagination.h"
 #include "BatchOperations.h"
+#include "utils/FilePreview.h"
+#include "utils/DuplicateDetector.h"
 
 // Forward declarations
 namespace FileRecovery {
@@ -43,6 +45,8 @@ private:
     void renderProgressPanel();
     void renderResultsPanel();
     void renderFileDetails();
+    void renderPreviewPanel();
+    void renderDuplicatePanel();
     
     void startRecovery();
     void stopRecovery();
@@ -110,7 +114,18 @@ private:
     
     // Thread safety
     std::mutex dataMutex_;
-    
+
+    // Preview system
+    std::unique_ptr<Utils::FilePreview> filePreview_;
+    Utils::PreviewData currentPreview_;
+    bool showPreview_ = false;
+
+    // Duplicate detection
+    std::unique_ptr<Utils::DuplicateDetector> duplicateDetector_;
+    std::vector<Utils::DuplicateGroup> duplicateGroups_;
+    bool showDuplicates_ = false;
+    bool duplicatesAnalyzed_ = false;
+
     // UI state
     bool showAbout_ = false;
     float progressHistory_[100] = {0};

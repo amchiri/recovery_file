@@ -59,6 +59,10 @@ RecoveryGUI::RecoveryGUI() {
     // Phase 9: Initialize pagination and batch operations
     pagination_ = std::make_unique<ResultsPagination>(100); // 100 items per page
     batchOps_ = std::make_unique<BatchOperations>();
+
+    // Initialize preview and duplicate detection systems
+    filePreview_ = std::make_unique<Utils::FilePreview>();
+    duplicateDetector_ = std::make_unique<Utils::DuplicateDetector>();
 }
 
 RecoveryGUI::~RecoveryGUI() {
@@ -253,6 +257,14 @@ void RecoveryGUI::renderMainWindow() {
     ImGui::EndChild();
 
     ImGui::End();
+
+    // Render popup panels
+    if (showPreview_) {
+        renderPreviewPanel();
+    }
+    if (showDuplicates_) {
+        renderDuplicatePanel();
+    }
 
     // About dialog
     if (showAbout_) {
@@ -550,7 +562,52 @@ void RecoveryGUI::renderResultsPanel() {
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
-    
+
+    // Toolbar with Preview and Duplicate Detection buttons
+    if (!recoveredFiles_.empty()) {
+        if (ImGui::Button("🔍 Preview Selected")) {
+            if (selectedFileIndex_ >= 0 && selectedFileIndex_ < static_cast<int>(recoveredFiles_.size())) {
+                const auto& selectedFile = recoveredFiles_[selectedFileIndex_];
+                if (std::filesystem::exists(selectedFile.path)) {
+                    // Extract file type from filename
+                    std::string fileType;
+                    size_t dotPos = selectedFile.filename.rfind('.');
+                    if (dotPos != std::string::npos) {
+                        fileType = selectedFile.filename.substr(dotPos + 1);
+                    }
+                    currentPreview_ = filePreview_->generatePreview(selectedFile.path, fileType);
+                    showPreview_ = true;
+                }
+            }
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Preview the selected file (image, text, or hex)");
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("🔎 Find Duplicates")) {
+            if (!duplicatesAnalyzed_) {
+                // Analyze files for duplicates
+                duplicateDetector_->clearFiles();
+                for (const auto& file : recoveredFiles_) {
+                    if (std::filesystem::exists(file.path)) {
+                        duplicateDetector_->addFile(file.path);
+                    }
+                }
+                duplicateGroups_ = duplicateDetector_->findDuplicates();
+                duplicatesAnalyzed_ = true;
+            }
+            showDuplicates_ = true;
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Find and manage duplicate files");
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+    }
+
     // Filters section
     if (!recoveredFiles_.empty()) {
         ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "FILTERS");
@@ -1295,6 +1352,170 @@ void RecoveryGUI::initializeExtensions() {
         {"psd", "Adobe Photoshop Documents", false},
         {"ai", "Adobe Illustrator Documents", false},
     };
+}
+
+void RecoveryGUI::renderPreviewPanel() {
+    ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("File Preview", &showPreview_)) {
+        if (selectedFileIndex_ >= 0 && selectedFileIndex_ < static_cast<int>(recoveredFiles_.size())) {
+            const auto& selectedFile = recoveredFiles_[selectedFileIndex_];
+
+            ImGui::TextColored(ImVec4(0.7f, 0.5f, 1.0f, 1.0f), "File: %s", selectedFile.filename.c_str());
+            ImGui::Text("Size: %.2f MB", selectedFile.size / (1024.0 * 1024.0));
+            ImGui::Text("Path: %s", selectedFile.path.c_str());
+
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Display preview based on type
+            if (currentPreview_.type == Utils::PreviewType::IMAGE) {
+                ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "IMAGE PREVIEW");
+                ImGui::Separator();
+                ImGui::Text("Dimensions: %dx%d", currentPreview_.width, currentPreview_.height);
+                ImGui::Text("Thumbnail: %zu bytes", currentPreview_.thumbnailData.size());
+                ImGui::Spacing();
+                ImGui::TextWrapped("Note: Full image decoding not yet implemented. Showing thumbnail placeholder.");
+
+            } else if (currentPreview_.type == Utils::PreviewType::TEXT) {
+                ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), "TEXT PREVIEW");
+                ImGui::Separator();
+                ImGui::BeginChild("TextContent", ImVec2(0, -30), true, ImGuiWindowFlags_HorizontalScrollbar);
+                ImGui::TextUnformatted(currentPreview_.textContent.c_str());
+                ImGui::EndChild();
+
+            } else if (currentPreview_.type == Utils::PreviewType::HEX) {
+                ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "HEX PREVIEW");
+                ImGui::Separator();
+                ImGui::BeginChild("HexContent", ImVec2(0, -30), true, ImGuiWindowFlags_HorizontalScrollbar);
+                ImGui::TextUnformatted(currentPreview_.hexDump.c_str());
+                ImGui::EndChild();
+
+            } else {
+                ImGui::TextDisabled("No preview available for this file type");
+            }
+
+            ImGui::Spacing();
+            if (ImGui::Button("Close")) {
+                showPreview_ = false;
+            }
+        }
+    }
+    ImGui::End();
+}
+
+void RecoveryGUI::renderDuplicatePanel() {
+    ImGui::SetNextWindowSize(ImVec2(900, 700), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Duplicate File Detector", &showDuplicates_)) {
+        ImGui::TextColored(ImVec4(0.7f, 0.5f, 1.0f, 1.0f), "DUPLICATE FILES DETECTED");
+        ImGui::Spacing();
+
+        // Statistics
+        size_t totalFiles = 0, uniqueFiles = 0, duplicateFiles = 0, wastedSpace = 0;
+        duplicateDetector_->getStatistics(totalFiles, uniqueFiles, duplicateFiles, wastedSpace);
+
+        ImGui::Text("Total Files: %zu", totalFiles);
+        ImGui::SameLine(200);
+        ImGui::Text("Unique: %zu", uniqueFiles);
+        ImGui::SameLine(350);
+        ImGui::Text("Duplicates: %zu", duplicateFiles);
+        ImGui::SameLine(500);
+        ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Wasted Space: %.2f MB", wastedSpace / (1024.0 * 1024.0));
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // Actions
+        if (duplicateGroups_.empty()) {
+            ImGui::TextDisabled("No duplicates found!");
+        } else {
+            ImGui::Text("Found %zu groups of duplicate files:", duplicateGroups_.size());
+            ImGui::Spacing();
+
+            if (ImGui::Button("Delete All Lower-Quality Duplicates")) {
+                auto filesToDelete = duplicateDetector_->getFilesToDelete();
+                size_t deletedCount = 0;
+                for (const auto& filepath : filesToDelete) {
+                    try {
+                        if (std::filesystem::exists(filepath)) {
+                            std::filesystem::remove(filepath);
+                            deletedCount++;
+                            LOG_INFO("Deleted duplicate: " + filepath);
+                        }
+                    } catch (const std::exception& e) {
+                        LOG_ERROR("Failed to delete " + filepath + ": " + e.what());
+                    }
+                }
+                ImGui::OpenPopup("Deletion Complete");
+                LOG_INFO("Deleted " + std::to_string(deletedCount) + " duplicate files");
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Automatically delete all lower-quality duplicates, keeping the best version");
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // Show duplicate groups
+            ImGui::BeginChild("DuplicateGroups", ImVec2(0, -30), true);
+
+            for (size_t g = 0; g < duplicateGroups_.size(); g++) {
+                const auto& group = duplicateGroups_[g];
+
+                ImGui::PushID(static_cast<int>(g));
+                if (ImGui::CollapsingHeader(("Group " + std::to_string(g + 1) + " - " + std::to_string(group.files.size()) + " duplicates (SHA256: " + group.hash.substr(0, 16) + "...)").c_str())) {
+                    ImGui::Indent();
+
+                    for (const auto& file : group.files) {
+                        bool isBest = (file.filePath == group.bestFile);
+
+                        if (isBest) {
+                            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "✓ KEEP");
+                        } else {
+                            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "✗ DELETE");
+                        }
+                        ImGui::SameLine();
+
+                        std::filesystem::path p(file.filePath);
+                        ImGui::Text("%s (%.2f KB)", p.filename().string().c_str(), file.fileSize / 1024.0);
+
+                        ImGui::SameLine(600);
+                        ImGui::TextDisabled("Quality: %.1f%%", file.quality * 100.0f);
+
+                        if (ImGui::IsItemHovered()) {
+                            ImGui::SetTooltip("Full path: %s\nSize: %zu bytes\nQuality: %.2f%%",
+                                file.filePath.c_str(), file.fileSize, file.quality * 100.0f);
+                        }
+                    }
+
+                    ImGui::Unindent();
+                }
+                ImGui::PopID();
+                ImGui::Spacing();
+            }
+
+            ImGui::EndChild();
+        }
+
+        // Deletion complete popup
+        if (ImGui::BeginPopupModal("Deletion Complete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Duplicate files have been deleted successfully!");
+            ImGui::Spacing();
+            if (ImGui::Button("OK", ImVec2(120, 0))) {
+                ImGui::CloseCurrentPopup();
+                // Refresh duplicate analysis
+                duplicatesAnalyzed_ = false;
+            }
+            ImGui::EndPopup();
+        }
+
+        ImGui::Spacing();
+        if (ImGui::Button("Close")) {
+            showDuplicates_ = false;
+        }
+    }
+    ImGui::End();
 }
 
 } // namespace GUI

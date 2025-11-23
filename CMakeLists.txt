@@ -46,6 +46,8 @@ set(SOURCES
     src/utils/AdminCheck.cpp
     src/utils/ConfigManager.cpp
     src/utils/BoyerMoore.cpp
+    src/utils/FilePreview.cpp
+    src/utils/DuplicateDetector.cpp
 )
 
 # Headers
@@ -71,6 +73,8 @@ set(HEADERS
     include/utils/AdminCheck.h
     include/utils/ConfigManager.h
     include/utils/BoyerMoore.h
+    include/utils/FilePreview.h
+    include/utils/DuplicateDetector.h
 )
 
 # Executable principal
@@ -120,6 +124,8 @@ if(BUILD_GUI)
         src/utils/AdminCheck.cpp
         src/utils/ConfigManager.cpp
         src/utils/BoyerMoore.cpp
+        src/utils/FilePreview.cpp
+        src/utils/DuplicateDetector.cpp
     )
     
     # GUI executable
