@@ -2,6 +2,9 @@
 #include "../utils/Logger.h"
 #include <fstream>
 #include <algorithm>
+#include <cmath>
+#include <sstream>
+#include <map>
 
 namespace FileRecovery {
 
@@ -49,22 +52,27 @@ FileQualityReport FileQuality::analyzeFile(const std::string& filePath) {
 FileQualityReport FileQuality::analyzeBuffer(const ByteArray& data, const std::string& fileType) {
     FileQualityReport report;
     report.totalBytes = data.size();
-    
-    // Calculer le pourcentage de zéros
+
+    // Anciennes métriques (conservées pour compatibilité)
     report.zeroPercentage = calculateZeroPercentage(data);
     report.zeroBytes = static_cast<size_t>(data.size() * report.zeroPercentage / 100.0f);
     report.nonZeroBytes = data.size() - report.zeroBytes;
-    
-    // Vérifier l'en-tête et le footer
+
+    // NOUVELLES MÉTRIQUES INTELLIGENTES
+    report.entropy = calculateEntropy(data);
     report.hasValidHeader = checkHeader(data, fileType);
     report.hasValidFooter = checkFooter(data, fileType);
-    
-    // Déterminer le niveau de qualité
-    report.level = determineQualityLevel(report.zeroPercentage, report.hasValidHeader, report.hasValidFooter);
-    
+    report.hasValidStructure = validateStructure(data, fileType);
+    report.hasRepeatingPatterns = detectRepeatingPatterns(data);
+    report.dataConsistency = calculateDataConsistency(data, fileType);
+
+    // NOUVELLE LOGIQUE : utilise entropie + structure au lieu du % zéros
+    report.level = determineQualityLevel(report);
+
     // Générer une recommandation
     report.recommendation = generateRecommendation(report);
-    
+    report.detailedAnalysis = generateDetailedAnalysis(report, fileType);
+
     return report;
 }
 
@@ -217,33 +225,56 @@ bool FileQuality::checkFooter(const ByteArray& data, const std::string& fileType
     return true;
 }
 
-FileQualityLevel FileQuality::determineQualityLevel(float zeroPercentage, bool hasHeader, bool hasFooter) {
-    // Fichier mort (>99% zeros)
-    if (zeroPercentage > 99.0f) {
+// ============================================================================
+// NOUVELLE LOGIQUE INTELLIGENTE DE DÉTERMINATION DE QUALITÉ
+// ============================================================================
+FileQualityLevel FileQuality::determineQualityLevel(const FileQualityReport& report) {
+    // Critère 1: Fichier complètement vide ou écrasé
+    if (report.zeroPercentage > 99.0f && report.entropy < 0.5f) {
         return FileQualityLevel::DEAD;
     }
-    
-    // Fichier très corrompu (90-99% zeros)
-    if (zeroPercentage > 90.0f) {
+
+    // Critère 2: Entropie anormalement haute = garbage aléatoire = DEAD
+    // (Fichiers normaux ont entropie 4.0-7.5, garbage = ~7.9-8.0)
+    if (report.entropy > 7.8f && !report.hasValidHeader) {
+        return FileQualityLevel::DEAD;
+    }
+
+    // Critère 3: Patterns répétitifs suspects sans header valide = DEAD
+    if (report.hasRepeatingPatterns && !report.hasValidHeader && report.dataConsistency < 0.3f) {
+        return FileQualityLevel::DEAD;
+    }
+
+    // Critère 4: Header invalide + footer invalide + entropie bizarre = CORRUPTED
+    if (!report.hasValidHeader && !report.hasValidFooter &&
+        (report.entropy < 2.0f || report.entropy > 7.8f)) {
         return FileQualityLevel::CORRUPTED;
     }
-    
-    // Fichier partiellement corrompu (60-90% zeros)
-    if (zeroPercentage > 60.0f) {
-        return FileQualityLevel::POOR;
+
+    // Critère 5: Structure valide + header/footer OK = EXCELLENT
+    if (report.hasValidStructure && report.hasValidHeader && report.hasValidFooter &&
+        report.dataConsistency > 0.8f) {
+        return FileQualityLevel::EXCELLENT;
     }
-    
-    // Fichier bon (30-60% zeros)
-    if (zeroPercentage > 30.0f) {
-        // Si l'en-tête et le footer sont valides, upgrader à EXCELLENT
-        if (hasHeader && hasFooter) {
-            return FileQualityLevel::EXCELLENT;
-        }
+
+    // Critère 6: Header valide + entropie normale + cohérence bonne = GOOD
+    if (report.hasValidHeader && report.entropy >= 3.0f && report.entropy <= 7.5f &&
+        report.dataConsistency > 0.6f) {
         return FileQualityLevel::GOOD;
     }
-    
-    // Fichier excellent (<30% zeros)
-    return FileQualityLevel::EXCELLENT;
+
+    // Critère 7: Header valide mais footer absent = POOR (tronqué)
+    if (report.hasValidHeader && !report.hasValidFooter) {
+        return FileQualityLevel::POOR;
+    }
+
+    // Critère 8: Data consistency faible = POOR
+    if (report.dataConsistency < 0.5f && report.hasValidHeader) {
+        return FileQualityLevel::POOR;
+    }
+
+    // Par défaut: CORRUPTED si rien ne passe
+    return FileQualityLevel::CORRUPTED;
 }
 
 std::string FileQuality::generateRecommendation(const FileQualityReport& report) {
@@ -272,6 +303,200 @@ std::string FileQuality::generateRecommendation(const FileQualityReport& report)
         default:
             return "Unable to determine file quality.";
     }
+}
+
+} // namespace FileRecovery
+
+// ============================================================================
+// NOUVELLES FONCTIONS INTELLIGENTES
+// ============================================================================
+
+// Calculer l'entropie de Shannon (mesure du désordre/randomness)
+// Entropie: 0.0 = données uniformes, 8.0 = maximum random
+float FileQuality::calculateEntropy(const ByteArray& data) {
+    if (data.empty()) return 0.0f;
+
+    // Compter la fréquence de chaque byte
+    std::vector<size_t> frequency(256, 0);
+    for (uint8_t byte : data) {
+        frequency[byte]++;
+    }
+
+    // Calculer l'entropie de Shannon: H = -Σ(p_i * log2(p_i))
+    float entropy = 0.0f;
+    size_t totalBytes = data.size();
+
+    for (size_t count : frequency) {
+        if (count > 0) {
+            float probability = static_cast<float>(count) / totalBytes;
+            entropy -= probability * std::log2(probability);
+        }
+    }
+
+    return entropy;
+}
+
+// Valider la structure interne du fichier (spécifique au format)
+bool FileQuality::validateStructure(const ByteArray& data, const std::string& fileType) {
+    if (data.size() < 16) return false;
+
+    // JPEG: Vérifier les marqueurs internes
+    if (fileType == "jpg" || fileType == "jpeg") {
+        // Un JPEG valide doit avoir des marqueurs FF Dx réguliers
+        size_t markerCount = 0;
+        for (size_t i = 0; i < data.size() - 1; ++i) {
+            if (data[i] == 0xFF && (data[i+1] >= 0xC0 && data[i+1] <= 0xFE)) {
+                markerCount++;
+            }
+        }
+        return markerCount >= 3; // Au moins 3 marqueurs JPEG
+    }
+
+    // PNG: Vérifier les chunks (longueur + type + CRC)
+    if (fileType == "png") {
+        size_t pos = 8; // Skip header
+        int validChunks = 0;
+        while (pos + 12 < data.size() && validChunks < 3) {
+            // PNG chunk: 4 bytes length + 4 bytes type + data + 4 bytes CRC
+            uint32_t chunkLen = (data[pos] << 24) | (data[pos+1] << 16) |
+                                (data[pos+2] << 8) | data[pos+3];
+            if (chunkLen < 1000000) { // Sanity check
+                validChunks++;
+                pos += 12 + chunkLen;
+            } else {
+                break;
+            }
+        }
+        return validChunks >= 2;
+    }
+
+    // PDF: Vérifier les objets internes
+    if (fileType == "pdf") {
+        std::string content(data.begin(), data.end());
+        size_t objCount = 0;
+        size_t pos = 0;
+        while ((pos = content.find(" obj", pos)) != std::string::npos) {
+            objCount++;
+            pos += 4;
+        }
+        return objCount >= 2; // Au moins 2 objets PDF
+    }
+
+    // ZIP/DOCX/XLSX: Vérifier les entrées du directory central
+    if (fileType == "zip" || fileType == "docx" || fileType == "xlsx") {
+        // Chercher la signature du central directory (PK\x01\x02)
+        for (size_t i = 0; i < data.size() - 4; ++i) {
+            if (data[i] == 0x50 && data[i+1] == 0x4B &&
+                data[i+2] == 0x01 && data[i+3] == 0x02) {
+                return true; // Central directory trouvé
+            }
+        }
+        return false;
+    }
+
+    // Pour les autres types, vérifier juste que le fichier n'est pas vide
+    return data.size() > 100;
+}
+
+// Détecter des patterns répétitifs suspects (signe de corruption)
+bool FileQuality::detectRepeatingPatterns(const ByteArray& data) {
+    if (data.size() < 64) return false;
+
+    // Vérifier si un pattern de 4 bytes se répète plus de 50% du fichier
+    std::map<uint32_t, size_t> patternCounts;
+    size_t totalPatterns = data.size() / 4;
+
+    for (size_t i = 0; i < data.size() - 3; i += 4) {
+        uint32_t pattern = (data[i] << 24) | (data[i+1] << 16) |
+                          (data[i+2] << 8) | data[i+3];
+        patternCounts[pattern]++;
+    }
+
+    // Si un pattern unique représente > 50% des données = suspect
+    for (const auto& [pattern, count] : patternCounts) {
+        if (count > totalPatterns / 2) {
+            // Exception: pattern 0x00000000 peut être légitime (sparse files)
+            if (pattern != 0x00000000) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+// Calculer la cohérence des données (basé sur le type de fichier)
+float FileQuality::calculateDataConsistency(const ByteArray& data, const std::string& fileType) {
+    if (data.empty()) return 0.0f;
+
+    float consistency = 1.0f;
+
+    // Pour images: vérifier que les pixels ne sont pas complètement aléatoires
+    if (fileType == "jpg" || fileType == "jpeg" || fileType == "png" || fileType == "bmp") {
+        // Mesurer la variation entre bytes adjacents
+        size_t highVariation = 0;
+        size_t sampleSize = std::min(data.size() - 1, size_t(1000));
+
+        for (size_t i = 0; i < sampleSize; ++i) {
+            int diff = std::abs(static_cast<int>(data[i]) - static_cast<int>(data[i+1]));
+            if (diff > 200) { // Variation très élevée
+                highVariation++;
+            }
+        }
+
+        float variationRatio = static_cast<float>(highVariation) / sampleSize;
+        consistency = 1.0f - variationRatio; // Moins de variation = plus cohérent
+    }
+
+    // Pour PDF: vérifier la présence de mots-clés PDF
+    if (fileType == "pdf") {
+        std::string content(data.begin(), data.end());
+        int keywordCount = 0;
+        if (content.find("endobj") != std::string::npos) keywordCount++;
+        if (content.find("stream") != std::string::npos) keywordCount++;
+        if (content.find("endstream") != std::string::npos) keywordCount++;
+        consistency = static_cast<float>(keywordCount) / 3.0f;
+    }
+
+    // Pour fichiers compressés: vérifier que l'entropie est élevée (normal pour compressé)
+    if (fileType == "zip" || fileType == "7z" || fileType == "rar") {
+        float entropy = calculateEntropy(data);
+        // Fichiers compressés doivent avoir haute entropie (7.0+)
+        consistency = (entropy >= 7.0f) ? 1.0f : (entropy / 7.0f);
+    }
+
+    return std::max(0.0f, std::min(1.0f, consistency));
+}
+
+// Générer une analyse détaillée pour le debug
+std::string FileQuality::generateDetailedAnalysis(const FileQualityReport& report, const std::string& fileType) {
+    std::stringstream ss;
+
+    ss << "File Type: " << fileType << "\n";
+    ss << "Size: " << report.totalBytes << " bytes\n";
+    ss << "Entropy: " << report.entropy << " (0=uniform, 8=random)\n";
+    ss << "Zero %: " << report.zeroPercentage << "%\n";
+    ss << "Header Valid: " << (report.hasValidHeader ? "YES" : "NO") << "\n";
+    ss << "Footer Valid: " << (report.hasValidFooter ? "YES" : "NO") << "\n";
+    ss << "Structure Valid: " << (report.hasValidStructure ? "YES" : "NO") << "\n";
+    ss << "Repeating Patterns: " << (report.hasRepeatingPatterns ? "DETECTED" : "None") << "\n";
+    ss << "Data Consistency: " << (report.dataConsistency * 100.0f) << "%\n";
+
+    // Interprétation de l'entropie
+    ss << "\nEntropy Analysis:\n";
+    if (report.entropy < 2.0f) {
+        ss << "  - Very low entropy = mostly uniform data (likely overwritten)\n";
+    } else if (report.entropy < 4.0f) {
+        ss << "  - Low entropy = simple data or partially corrupted\n";
+    } else if (report.entropy < 7.5f) {
+        ss << "  - Normal entropy = typical file data\n";
+    } else if (report.entropy < 7.9f) {
+        ss << "  - High entropy = compressed or encrypted data\n";
+    } else {
+        ss << "  - Maximum entropy = random garbage or strong encryption\n";
+    }
+
+    return ss.str();
 }
 
 } // namespace FileRecovery
