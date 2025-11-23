@@ -1,13 +1,23 @@
 #include "gui/RecoveryGUI.h"
 #include "gui/Logger.h"
+#include "utils/AdminCheck.h"
 #include <iostream>
 
 int main() {
+    // Vérification des privilèges administrateur AVANT toute autre opération
+    if (!FileRecovery::Utils::checkAdminPrivileges("file_recovery_gui")) {
+        std::cerr << "\nERREUR : Le programme doit être exécuté en mode administrateur.\n";
+        std::cerr << "Appuyez sur Entrée pour quitter...\n";
+        std::cin.get();
+        return 1;
+    }
+
     // Initialize logger FIRST, before anything else
     try {
         FileLogger::getInstance().init("recovery_log.txt");
         LOG_INFO("========================================");
         LOG_INFO("File Recovery Tool - GUI Started");
+        LOG_INFO("Running with Administrator privileges");
         LOG_INFO("========================================");
     } catch (...) {
         std::cerr << "Warning: Failed to initialize logger\n";

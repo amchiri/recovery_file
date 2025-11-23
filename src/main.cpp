@@ -1,5 +1,6 @@
 #include "RecoveryEngine.h"
 #include "utils/Logger.h"
+#include "utils/AdminCheck.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -21,7 +22,15 @@ bool parseArguments(int argc, char* argv[], ScanConfig& config, std::string& dis
 
 int main(int argc, char* argv[]) {
     printBanner();
-    
+
+    // Vérification des privilèges administrateur (CRITIQUE)
+    if (!Utils::checkAdminPrivileges("file_recovery")) {
+        std::cerr << "ERREUR : Le programme doit être exécuté en mode administrateur.\n";
+        std::cerr << "Appuyez sur Entrée pour quitter...\n";
+        std::cin.get();
+        return 1;
+    }
+
     if (argc < 2) {
         printUsage();
         return 1;

@@ -43,6 +43,7 @@ set(SOURCES
     src/utils/Logger.cpp
     src/utils/ProgressBar.cpp
     src/utils/FileQuality.cpp
+    src/utils/AdminCheck.cpp
 )
 
 # Headers
@@ -65,6 +66,7 @@ set(HEADERS
     src/utils/Logger.h
     src/utils/ProgressBar.h
     include/FileQuality.h
+    include/utils/AdminCheck.h
 )
 
 # Executable principal
@@ -111,6 +113,7 @@ if(BUILD_GUI)
         src/utils/DiskIO.cpp
         src/utils/FileQuality.cpp
         src/utils/Logger.cpp
+        src/utils/AdminCheck.cpp
     )
     
     # GUI executable
