@@ -824,19 +824,19 @@ void RecoveryGUI::startRecovery() {
     
     recoveryThread_ = std::make_unique<std::thread>([this, selectedExts]() {
         try {
-            std::cout << "[DEBUG] Recovery thread started" << std::endl;
+            LOG_DEBUG("Recovery thread started");
             
             std::string diskPath = availableDisks_[selectedDiskIndex_];
-            std::cout << "[DEBUG] Selected disk: " << diskPath << std::endl;
-            
+            LOG_DEBUG("Selected disk: " + diskPath);
+
             // Extract just the drive letter (e.g., "C:" from "C: - Local Disk (Windows)")
             if (diskPath.length() >= 2 && diskPath[1] == ':') {
                 diskPath = diskPath.substr(0, 2);
             }
-            std::cout << "[DEBUG] Cleaned disk path: " << diskPath << std::endl;
-            
+            LOG_DEBUG("Cleaned disk path: " + diskPath);
+
             std::string outputPath = outputPath_;
-            std::cout << "[DEBUG] Output path: " << outputPath << std::endl;
+            LOG_DEBUG("Output path: " + outputPath);
             
             std::cout << "\n🚀 Starting recovery..." << std::endl;
             std::cout << "📀 Disk: " << diskPath << std::endl;
@@ -858,13 +858,13 @@ void RecoveryGUI::startRecovery() {
             }
             
             // Create output directory
-            std::cout << "[DEBUG] Creating output directory..." << std::endl;
+            LOG_DEBUG("Creating output directory...");
             std::filesystem::create_directories(outputPath);
-            std::cout << "[DEBUG] Output directory created" << std::endl;
+            LOG_DEBUG("Output directory created");
             
             // Initialize scanner based on scan mode
             if (deepScan_) {
-                std::cout << "[DEBUG] Creating DeepScanner..." << std::endl;
+                LOG_DEBUG("Creating DeepScanner...");
                 auto deepScanner = std::make_unique<DeepScanner>();
                 
                 // Phase 8: Set optimization options (only for DeepScanner)
@@ -873,7 +873,7 @@ void RecoveryGUI::startRecovery() {
                 sectorsSkipped_ = 0; // Reset counter
                 
                 scanner_ = std::move(deepScanner);
-                std::cout << "[DEBUG] DeepScanner created" << std::endl;
+                LOG_DEBUG("DeepScanner created");
                 
                 if (enableSmartScan_) {
                     std::cout << "   ⚡ Smart Scan enabled (will skip empty sectors)" << std::endl;
@@ -882,18 +882,18 @@ void RecoveryGUI::startRecovery() {
                     std::cout << "   📦 Large buffers enabled (1MB blocks)" << std::endl;
                 }
             } else {
-                std::cout << "[DEBUG] Creating QuickScanner (MFT/FAT scan)..." << std::endl;
+                LOG_DEBUG("Creating QuickScanner (MFT/FAT scan)...");
                 scanner_ = std::make_unique<QuickScanner>();
-                std::cout << "[DEBUG] QuickScanner created" << std::endl;
+                LOG_DEBUG("QuickScanner created");
                 std::cout << "   🚀 Quick Scan mode (reads file system metadata)" << std::endl;
             }
             
-            std::cout << "[DEBUG] Creating RecoveryManager..." << std::endl;
+            LOG_DEBUG("Creating RecoveryManager...");
             recoveryManager_ = std::make_unique<RecoveryManager>();
-            std::cout << "[DEBUG] RecoveryManager created" << std::endl;
+            LOG_DEBUG("RecoveryManager created");
             
             // Setup callbacks
-            std::cout << "[DEBUG] Setting up progress callback..." << std::endl;
+            LOG_DEBUG("Setting up progress callback...");
             scanner_->setProgressCallback([this](float prog, const std::string& status) {
                 try {
                     progress_.store(prog);
@@ -922,17 +922,17 @@ void RecoveryGUI::startRecovery() {
                     std::cerr << "[ERROR] Unknown exception in progress callback!" << std::endl;
                 }
             });
-            std::cout << "[DEBUG] Progress callback set" << std::endl;
+            LOG_DEBUG("Progress callback set");
             
-            std::cout << "[DEBUG] Setting up file found callback..." << std::endl;
+            LOG_DEBUG("Setting up file found callback...");
             
             // Create a DiskIO for file recovery in callbacks
-            std::cout << "[DEBUG] Creating DiskIO for recovery..." << std::endl;
+            LOG_DEBUG("Creating DiskIO for recovery...");
             auto diskIO = std::make_shared<DiskIO>();
             if (!diskIO->openDevice(diskPath)) {
                 std::cerr << "[ERROR] Failed to open device for file recovery callbacks!" << std::endl;
             }
-            std::cout << "[DEBUG] DiskIO created for callbacks" << std::endl;
+            LOG_DEBUG("DiskIO created for callbacks");
             
             scanner_->setFileFoundCallback([this, outputPath, diskIO, scanFolder = std::string(scanFolderPath_), isSpecificFolder = scanSpecificFolder_](const RecoveredFile& file) {
                 try {
@@ -958,16 +958,12 @@ void RecoveryGUI::startRecovery() {
                         }
                     }
                     
-                    // Safety limit: don't add more than 10000 files to prevent memory issues
-                    if (recoveredFiles_.size() >= 10000) {
-                        if (filesFound_.fetch_add(1) == 10000) {
-                            std::cout << "⚠️ WARNING: Reached 10,000 files limit. Further files will be ignored." << std::endl;
-                            LOG_WARNING("Reached 10,000 files limit");
-                        }
-                        return;
+                    // No arbitrary file limit - rely on system memory management
+                    // Log every 1000 files to track progress
+                    size_t currentCount = filesFound_.fetch_add(1);
+                    if (currentCount % 1000 == 0 && currentCount > 0) {
+                        LOG_INFO("Found " + std::to_string(currentCount) + " files so far...");
                     }
-                    
-                    filesFound_.fetch_add(1);
                     
                     std::cout << "✓ Found file: " << file.originalName
                              << " (size: " << file.fileSize << " bytes)" << std::endl;
@@ -1025,11 +1021,11 @@ void RecoveryGUI::startRecovery() {
                     info.path = filepath;
                     info.zeroPercentage = zeroPercentage;
                     
-                    std::cout << "[DEBUG] About to lock mutex..." << std::endl;
+                    LOG_DEBUG("About to lock mutex...");
                     std::lock_guard<std::mutex> lock(dataMutex_);
-                    std::cout << "[DEBUG] Mutex locked, adding to vector..." << std::endl;
+                    LOG_DEBUG("Mutex locked, adding to vector...");
                     recoveredFiles_.push_back(info);
-                    std::cout << "[DEBUG] File added successfully. Total files: " << recoveredFiles_.size() << std::endl;
+                    LOG_DEBUG("File added successfully. Total files: " + std::to_string(recoveredFiles_.size()));
                 } catch (const std::exception& e) {
                     std::cerr << "[ERROR] Exception in file found callback: " << e.what() << std::endl;
                     LOG_ERROR(std::string("Exception in file found callback: ") + e.what());
@@ -1038,10 +1034,10 @@ void RecoveryGUI::startRecovery() {
                     LOG_ERROR("Unknown exception in file found callback");
                 }
             });
-            std::cout << "[DEBUG] File found callback set" << std::endl;
+            LOG_DEBUG("File found callback set");
             
             // Configure scan for each extension
-            std::cout << "[DEBUG] Starting scan loop for " << selectedExts.size() << " extensions..." << std::endl;
+            LOG_DEBUG("Starting scan loop for " << selectedExts.size() << " extensions...");
             for (const auto& ext : selectedExts) {
                 if (stopRequested_) {
                     std::cout << "\n⏹️ Scan stopped by user" << std::endl;
@@ -1051,7 +1047,7 @@ void RecoveryGUI::startRecovery() {
                 std::cout << "\n🔍 Scanning for ." << ext << " files..." << std::endl;
                 
                 // Setup disk info - Get actual disk size
-                std::cout << "[DEBUG] Setting up DiskInfo..." << std::endl;
+                LOG_DEBUG("Setting up DiskInfo...");
                 DiskInfo diskInfo;
                 diskInfo.devicePath = diskPath;
                 diskInfo.sectorSize = 512;
@@ -1065,7 +1061,7 @@ void RecoveryGUI::startRecovery() {
                     diskInfo.freeSize = totalFreeBytes.QuadPart;
                     diskInfo.usedSize = diskInfo.totalSize - diskInfo.freeSize;
                     
-                    std::cout << "[DEBUG] Disk size: " << (diskInfo.totalSize / (1024*1024*1024)) << " GB" << std::endl;
+                    LOG_DEBUG("Disk size: " << (diskInfo.totalSize / (1024*1024*1024)) << " GB");
                     
                     // Detect filesystem type
                     char fileSystemName[256];
@@ -1074,8 +1070,8 @@ void RecoveryGUI::startRecovery() {
                                               &maxComponentLen, &fileSystemFlags, 
                                               fileSystemName, sizeof(fileSystemName))) {
                         std::string fsName(fileSystemName);
-                        std::cout << "[DEBUG] Filesystem: " << fsName << std::endl;
-                        
+                        LOG_DEBUG("Filesystem: " + fsName);
+
                         if (fsName == "NTFS") {
                             diskInfo.fsType = FilesystemType::NTFS;
                         } else if (fsName == "FAT32" || fsName == "FAT") {
@@ -1098,21 +1094,21 @@ void RecoveryGUI::startRecovery() {
                 } else {
                     std::cerr << "[ERROR] Failed to get disk size!" << std::endl;
                     diskInfo.totalSize = 500ULL * 1024 * 1024 * 1024; // Default 500GB
-                    std::cout << "[DEBUG] Using default size: 500 GB" << std::endl;
+                    LOG_DEBUG("Using default size: 500 GB");
                 }
-                std::cout << "[DEBUG] DiskInfo configured" << std::endl;
+                LOG_DEBUG("DiskInfo configured");
                 
                 // Setup scan config
-                std::cout << "[DEBUG] Setting up ScanConfig..." << std::endl;
+                LOG_DEBUG("Setting up ScanConfig...");
                 ScanConfig config;
                 config.targetExtensions = {ext};
                 config.deepScan = deepScan_;
                 config.threadCount = threads_;
                 config.outputDirectory = outputPath;
-                std::cout << "[DEBUG] ScanConfig configured" << std::endl;
+                LOG_DEBUG("ScanConfig configured");
                 
                 // Start scan
-                std::cout << "[DEBUG] About to call scanner->startScan()..." << std::endl;
+                LOG_DEBUG("About to call scanner->startScan()...");
                 
                 if (scanner_->startScan(diskInfo, config)) {
                     std::cout << "[INFO] Scan started successfully, monitoring progress..." << std::endl;
@@ -1128,12 +1124,9 @@ void RecoveryGUI::startRecovery() {
                                      << filesFound_.load() << std::endl;
                         }
                         
-                        // Emergency stop if too many files (shouldn't happen with callback limit but just in case)
-                        if (recoveredFiles_.size() >= 10000) {
-                            std::cout << "[WARNING] Emergency stop: 10,000 files limit reached!" << std::endl;
-                            LOG_WARNING("Emergency stop: 10,000 files limit reached");
-                            scanner_->stopScan();
-                            break;
+                        // Log progress for large scans
+                        if (recoveredFiles_.size() % 5000 == 0 && recoveredFiles_.size() > 0) {
+                            LOG_INFO("Processing: " + std::to_string(recoveredFiles_.size()) + " files in memory");
                         }
                     }
                 

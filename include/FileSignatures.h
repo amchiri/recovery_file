@@ -49,7 +49,11 @@ private:
     void addAudioSignatures();
     void addDocumentSignatures();
     void addArchiveSignatures();
-    void addGameSignatures();  // Signatures de jeux vidéo
+    void addGameSignatures();       // Signatures de jeux vidéo
+    void addExecutableSignatures(); // Exécutables et DLLs
+    void addDatabaseSignatures();   // Bases de données
+    void add3DSignatures();         // Fichiers 3D
+    void addCryptoSignatures();     // Wallets et crypto
 
     class Impl;
     std::unique_ptr<Impl> pImpl;

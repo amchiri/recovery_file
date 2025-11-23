@@ -55,8 +55,8 @@ private:
     // Recovery parameters
     std::vector<std::string> availableDisks_;
     int selectedDiskIndex_ = 0;
-    char outputPath_[512] = "C:\\Users\\polom\\recovery_file\\recovered_saves";
-    
+    char outputPath_[512] = ".\\recovered_files";  // Default: current directory
+
     // Extensions with checkboxes
     struct ExtensionInfo {
         std::string name;
@@ -64,12 +64,12 @@ private:
         bool selected;
     };
     std::vector<ExtensionInfo> extensions_;
-    
+
     char filter_[128] = "";
     int threads_ = 4;
     bool deepScan_ = true;
     bool scanSpecificFolder_ = false;  // Scan specific folder instead of entire disk
-    char scanFolderPath_[512] = "C:\\Users\\polom\\AppData\\Local";
+    char scanFolderPath_[512] = "";  // Empty by default, user must specify
     
     // Recovery state
     bool isRecovering_ = false;
