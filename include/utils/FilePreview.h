@@ -22,18 +22,20 @@ struct PreviewData {
     std::string fileType;
     size_t fileSize;
 
-    // Pour images : données RGBA de la miniature
+    // Pour images : dimensions originales et miniature
+    int width = 0;              // Original image width
+    int height = 0;             // Original image height
     std::vector<uint8_t> thumbnailData;
-    int thumbnailWidth;
-    int thumbnailHeight;
+    int thumbnailWidth = 0;
+    int thumbnailHeight = 0;
 
     // Pour texte : lignes extraites
     std::vector<std::string> textLines;
-    size_t totalLines;
+    size_t totalLines = 0;
 
     // Pour hex : premiers bytes
     std::vector<uint8_t> hexData;
-    size_t hexDataOffset;
+    size_t hexDataOffset = 0;
 
     std::string error; // Message d'erreur si échec
 };

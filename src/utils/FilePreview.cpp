@@ -5,6 +5,10 @@
 #include <algorithm>
 #include <cctype>
 
+// STB Image libraries for image decoding and resizing
+#include "external/stb_image.h"
+#include "external/stb_image_resize.h"
+
 namespace FileRecovery {
 namespace Utils {
 
@@ -93,33 +97,87 @@ PreviewData FilePreview::generateImageThumbnail(const ByteArray& data, const std
     preview.fileType = fileType;
     preview.fileSize = data.size();
 
-    // Pour l'instant, génération simplifiée sans décodage complet
-    // On extrait juste les métadonnées de base et crée une miniature placeholder
-
     std::string ext = fileType;
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-    // Placeholder: créer une miniature de 128x128 avec un dégradé basé sur les données
-    preview.thumbnailWidth = 128;
-    preview.thumbnailHeight = 128;
-    preview.thumbnailData.resize(128 * 128 * 4); // RGBA
+    // Decode image using stb_image
+    int width, height, channels;
+    unsigned char* imgData = stbi_load_from_memory(
+        data.data(),
+        static_cast<int>(data.size()),
+        &width,
+        &height,
+        &channels,
+        4  // Force RGBA output
+    );
 
-    // Générer un pattern visuel basé sur le contenu du fichier
-    // (simple hash visuel pour identifier l'image)
-    for (int y = 0; y < 128; ++y) {
-        for (int x = 0; x < 128; ++x) {
-            size_t idx = (y * 128 + x) * 4;
-            size_t dataIdx = (y * 128 + x) % data.size();
+    if (!imgData) {
+        // Decoding failed, create error preview
+        LOG_WARNING("Failed to decode " + ext + " image: " + std::string(stbi_failure_reason()));
+        preview.error = "Failed to decode image: " + std::string(stbi_failure_reason());
 
-            // Créer un pattern coloré basé sur les données
-            preview.thumbnailData[idx + 0] = data[dataIdx];                     // R
-            preview.thumbnailData[idx + 1] = data[(dataIdx + 1) % data.size()]; // G
-            preview.thumbnailData[idx + 2] = data[(dataIdx + 2) % data.size()]; // B
-            preview.thumbnailData[idx + 3] = 255;                                // A
+        // Create placeholder thumbnail
+        preview.thumbnailWidth = 128;
+        preview.thumbnailHeight = 128;
+        preview.thumbnailData.resize(128 * 128 * 4);
+
+        // Fill with error pattern (red/gray checkerboard)
+        for (int y = 0; y < 128; ++y) {
+            for (int x = 0; x < 128; ++x) {
+                size_t idx = (y * 128 + x) * 4;
+                bool isRed = ((x / 16) + (y / 16)) % 2 == 0;
+                preview.thumbnailData[idx + 0] = isRed ? 200 : 50;  // R
+                preview.thumbnailData[idx + 1] = isRed ? 50 : 50;   // G
+                preview.thumbnailData[idx + 2] = isRed ? 50 : 50;   // B
+                preview.thumbnailData[idx + 3] = 255;               // A
+            }
+        }
+        return preview;
+    }
+
+    LOG_INFO("Successfully decoded " + ext + " image: " + std::to_string(width) +
+             "x" + std::to_string(height) + " (" + std::to_string(channels) + " channels)");
+
+    // Store original dimensions
+    preview.width = width;
+    preview.height = height;
+
+    // Generate thumbnail (128x128) using stb_image_resize
+    const int thumbWidth = 128;
+    const int thumbHeight = 128;
+
+    preview.thumbnailWidth = thumbWidth;
+    preview.thumbnailHeight = thumbHeight;
+    preview.thumbnailData.resize(thumbWidth * thumbHeight * 4);
+
+    // Resize using stb_image_resize with high-quality algorithm
+    int result = stbir_resize_uint8_linear(
+        imgData, width, height, 0,
+        preview.thumbnailData.data(), thumbWidth, thumbHeight, 0,
+        STBIR_RGBA
+    );
+
+    if (!result) {
+        LOG_WARNING("Failed to resize thumbnail, using simple copy");
+        // Fallback: just copy top-left corner
+        int copyW = std::min(width, thumbWidth);
+        int copyH = std::min(height, thumbHeight);
+        for (int y = 0; y < copyH; ++y) {
+            for (int x = 0; x < copyW; ++x) {
+                size_t srcIdx = (y * width + x) * 4;
+                size_t dstIdx = (y * thumbWidth + x) * 4;
+                preview.thumbnailData[dstIdx + 0] = imgData[srcIdx + 0];
+                preview.thumbnailData[dstIdx + 1] = imgData[srcIdx + 1];
+                preview.thumbnailData[dstIdx + 2] = imgData[srcIdx + 2];
+                preview.thumbnailData[dstIdx + 3] = imgData[srcIdx + 3];
+            }
         }
     }
 
-    preview.error = "Placeholder thumbnail (full decoding not implemented)";
+    // Free the original decoded image
+    stbi_image_free(imgData);
+
+    preview.error = ""; // No error
     return preview;
 }
 
@@ -190,34 +248,93 @@ PreviewData FilePreview::generateHexDump(const ByteArray& data, size_t maxBytes)
     return preview;
 }
 
-// Décodeurs d'images (stubs pour l'instant - nécessiteraient stb_image ou similaire)
+// ============================================================================
+// DÉCODEURS D'IMAGES (utilisant stb_image)
+// ============================================================================
 bool FilePreview::decodeJPEG(const ByteArray& data, std::vector<uint8_t>& rgba, int& width, int& height) {
-    // TODO: Implémenter avec stb_image ou libjpeg
-    return false;
+    int channels;
+    unsigned char* imgData = stbi_load_from_memory(
+        data.data(),
+        static_cast<int>(data.size()),
+        &width,
+        &height,
+        &channels,
+        4  // Force RGBA output
+    );
+
+    if (!imgData) {
+        LOG_ERROR("Failed to decode JPEG: " + std::string(stbi_failure_reason()));
+        return false;
+    }
+
+    // Copy data to output vector
+    size_t dataSize = width * height * 4;
+    rgba.resize(dataSize);
+    std::memcpy(rgba.data(), imgData, dataSize);
+
+    // Free stb_image buffer
+    stbi_image_free(imgData);
+
+    LOG_DEBUG("JPEG decoded successfully: " + std::to_string(width) + "x" + std::to_string(height));
+    return true;
 }
 
 bool FilePreview::decodePNG(const ByteArray& data, std::vector<uint8_t>& rgba, int& width, int& height) {
-    // TODO: Implémenter avec stb_image ou libpng
-    return false;
+    int channels;
+    unsigned char* imgData = stbi_load_from_memory(
+        data.data(),
+        static_cast<int>(data.size()),
+        &width,
+        &height,
+        &channels,
+        4  // Force RGBA output
+    );
+
+    if (!imgData) {
+        LOG_ERROR("Failed to decode PNG: " + std::string(stbi_failure_reason()));
+        return false;
+    }
+
+    // Copy data to output vector
+    size_t dataSize = width * height * 4;
+    rgba.resize(dataSize);
+    std::memcpy(rgba.data(), imgData, dataSize);
+
+    // Free stb_image buffer
+    stbi_image_free(imgData);
+
+    LOG_DEBUG("PNG decoded successfully: " + std::to_string(width) + "x" + std::to_string(height));
+    return true;
 }
 
 void FilePreview::resizeThumbnail(const std::vector<uint8_t>& srcRGBA, int srcW, int srcH,
                                   std::vector<uint8_t>& dstRGBA, int dstW, int dstH) {
     dstRGBA.resize(dstW * dstH * 4);
 
-    // Redimensionnement nearest-neighbor simple
-    for (int y = 0; y < dstH; ++y) {
-        for (int x = 0; x < dstW; ++x) {
-            int srcX = x * srcW / dstW;
-            int srcY = y * srcH / dstH;
+    // Use stb_image_resize for high-quality resizing
+    int result = stbir_resize_uint8_linear(
+        srcRGBA.data(), srcW, srcH, 0,
+        dstRGBA.data(), dstW, dstH, 0,
+        STBIR_RGBA
+    );
 
-            size_t srcIdx = (srcY * srcW + srcX) * 4;
-            size_t dstIdx = (y * dstW + x) * 4;
+    if (!result) {
+        LOG_WARNING("stb_image_resize failed, using fallback nearest-neighbor");
 
-            dstRGBA[dstIdx + 0] = srcRGBA[srcIdx + 0];
-            dstRGBA[dstIdx + 1] = srcRGBA[srcIdx + 1];
-            dstRGBA[dstIdx + 2] = srcRGBA[srcIdx + 2];
-            dstRGBA[dstIdx + 3] = srcRGBA[srcIdx + 3];
+        // Fallback: simple nearest-neighbor
+        for (int y = 0; y < dstH; ++y) {
+            for (int x = 0; x < dstW; ++x) {
+                int srcX = x * srcW / dstW;
+                int srcY = y * srcH / dstH;
+
+                size_t srcIdx = (srcY * srcW + srcX) * 4;
+                size_t dstIdx = (y * dstW + x) * 4;
+
+                dstRGBA[dstIdx + 0] = srcRGBA[srcIdx + 0];
+                dstRGBA[dstIdx + 1] = srcRGBA[srcIdx + 1];
+                dstRGBA[dstIdx + 2] = srcRGBA[srcIdx + 2];
+                dstRGBA[dstIdx + 3] = srcRGBA[srcIdx + 3];
+            }
         }
     }
 }

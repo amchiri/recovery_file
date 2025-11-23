@@ -1371,23 +1371,68 @@ void RecoveryGUI::renderPreviewPanel() {
             if (currentPreview_.type == Utils::PreviewType::IMAGE) {
                 ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "IMAGE PREVIEW");
                 ImGui::Separator();
-                ImGui::Text("Dimensions: %dx%d", currentPreview_.width, currentPreview_.height);
-                ImGui::Text("Thumbnail: %zu bytes", currentPreview_.thumbnailData.size());
-                ImGui::Spacing();
-                ImGui::TextWrapped("Note: Full image decoding not yet implemented. Showing thumbnail placeholder.");
+
+                if (currentPreview_.error.empty()) {
+                    ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "✓ Successfully decoded image using stb_image!");
+                    ImGui::Text("Original Dimensions: %dx%d", currentPreview_.width, currentPreview_.height);
+                    ImGui::Text("Thumbnail Size: %dx%d", currentPreview_.thumbnailWidth, currentPreview_.thumbnailHeight);
+                    ImGui::Text("Thumbnail Data: %zu bytes (RGBA)", currentPreview_.thumbnailData.size());
+                    ImGui::Spacing();
+                    ImGui::TextWrapped("Note: Image successfully decoded. Thumbnail data is ready. OpenGL texture display will be added in next update.");
+                } else {
+                    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "✗ Failed to decode image");
+                    ImGui::TextWrapped("Error: %s", currentPreview_.error.c_str());
+                }
 
             } else if (currentPreview_.type == Utils::PreviewType::TEXT) {
                 ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), "TEXT PREVIEW");
                 ImGui::Separator();
+                ImGui::Text("Showing %zu of %zu lines", currentPreview_.textLines.size(), currentPreview_.totalLines);
+                ImGui::Spacing();
+
                 ImGui::BeginChild("TextContent", ImVec2(0, -30), true, ImGuiWindowFlags_HorizontalScrollbar);
-                ImGui::TextUnformatted(currentPreview_.textContent.c_str());
+                for (const auto& line : currentPreview_.textLines) {
+                    ImGui::TextUnformatted(line.c_str());
+                }
                 ImGui::EndChild();
 
             } else if (currentPreview_.type == Utils::PreviewType::HEX) {
                 ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "HEX PREVIEW");
                 ImGui::Separator();
+                ImGui::Text("Showing first %zu bytes", currentPreview_.hexData.size());
+                ImGui::Spacing();
+
                 ImGui::BeginChild("HexContent", ImVec2(0, -30), true, ImGuiWindowFlags_HorizontalScrollbar);
-                ImGui::TextUnformatted(currentPreview_.hexDump.c_str());
+
+                // Format hex dump nicely
+                for (size_t i = 0; i < currentPreview_.hexData.size(); i += 16) {
+                    // Offset
+                    ImGui::Text("%08zX:", i);
+                    ImGui::SameLine();
+
+                    // Hex bytes
+                    for (size_t j = 0; j < 16 && (i + j) < currentPreview_.hexData.size(); ++j) {
+                        if (j == 8) ImGui::SameLine(0, 10);
+                        ImGui::SameLine();
+                        ImGui::Text("%02X", currentPreview_.hexData[i + j]);
+                    }
+
+                    // ASCII representation
+                    ImGui::SameLine(0, 20);
+                    ImGui::Text("|");
+                    ImGui::SameLine();
+                    for (size_t j = 0; j < 16 && (i + j) < currentPreview_.hexData.size(); ++j) {
+                        uint8_t byte = currentPreview_.hexData[i + j];
+                        if (byte >= 32 && byte <= 126) {
+                            ImGui::Text("%c", byte);
+                        } else {
+                            ImGui::Text(".");
+                        }
+                        ImGui::SameLine();
+                    }
+                    ImGui::Text("|");
+                }
+
                 ImGui::EndChild();
 
             } else {

@@ -48,6 +48,7 @@ set(SOURCES
     src/utils/BoyerMoore.cpp
     src/utils/FilePreview.cpp
     src/utils/DuplicateDetector.cpp
+    src/utils/stb_image_impl.cpp
 )
 
 # Headers
@@ -126,6 +127,7 @@ if(BUILD_GUI)
         src/utils/BoyerMoore.cpp
         src/utils/FilePreview.cpp
         src/utils/DuplicateDetector.cpp
+        src/utils/stb_image_impl.cpp
     )
     
     # GUI executable
