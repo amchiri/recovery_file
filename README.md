@@ -476,4 +476,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+## Usage
+
+- You must give credit to the original author (amchiri)
+- Commercial use requires permission
+
+If you want to use this project commercially, please contact me first.
+
 <p align="center">Made with ❤️ for data recovery</p>
